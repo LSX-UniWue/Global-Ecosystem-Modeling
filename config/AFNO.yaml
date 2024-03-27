@@ -1,0 +1,131 @@
+### base config ###
+full_field: &FULL_FIELD
+  loss: 'l2'
+  lr: 1E-3
+  scheduler: 'ReduceLROnPlateau'
+  num_data_workers: 4
+  dt: 1 # how many timesteps ahead the model will predict
+  n_history: 0 #how many previous timesteps to consider
+  prediction_type: 'iterative'
+  prediction_length: 3 #applicable only if prediction_type == 'iterative'
+  n_initial_conditions: 1 #applicable only if prediction_type == 'iterative'
+  ics_type: "default"
+  save_raw_forecasts: !!bool True
+  save_channel: !!bool False
+  masked_acc: !!bool False
+  maskpath: None
+  perturb: !!bool False
+  add_grid: !!bool False
+  N_grid_channels: 0
+  gridtype: 'sinusoidal' #options 'sinusoidal' or 'linear'
+  roll: !!bool False
+  max_epochs: 50
+  batch_size: 64
+  block_type: 'adapter-ready' #options 'original
+
+  #afno hyperparams
+  num_blocks: 8
+  depth: 12
+  nettype: 'afno'
+  patch_size: 8
+  width: 56
+  modes: 32
+  #options default, residual
+  target: 'default'
+  in_channels: [ 0,1 ]
+  out_channels: [ 0,1 ] #must be same as in_channels if prediction_type == 'iterative'
+  normalization: 'zscore' #options zscore (minmax not supported) 
+  train_data_path: '/pscratch/sd/j/jpathak/wind/train'
+  valid_data_path: '/pscratch/sd/j/jpathak/wind/test'
+  inf_data_path: '/pscratch/sd/j/jpathak/wind/out_of_sample' # test set path for inference
+  exp_dir: '/pscratch/sd/j/jpathak/ERA5_expts_gtc/wind'
+  time_means_path: '/pscratch/sd/j/jpathak/wind/time_means.npy'
+  global_means_path: '/pscratch/sd/j/jpathak/wind/global_means.npy'
+  global_stds_path: '/pscratch/sd/j/jpathak/wind/global_stds.npy'
+
+  orography: !!bool False
+  orography_path: None
+
+  log_to_screen: !!bool True
+  log_to_wandb: !!bool True
+  save_checkpoint: !!bool True
+
+  enable_nhwc: !!bool False
+  optimizer_type: 'Adam'
+  crop_size_x: None
+  crop_size_y: None
+
+  two_step_training: !!bool False
+  plot_animations: !!bool False
+
+  add_noise: !!bool False
+  noise_std: 0
+  block-type: 'original'
+
+
+afno_backbone: &backbone
+  <<: *FULL_FIELD
+  log_to_wandb: !!bool False
+  lr: 5E-4
+  batch_size: 4
+  block-type: 'original'
+  max_epochs: 2
+  scheduler: 'CosineAnnealingLR'
+  in_channels: [ 0, 1 ,2, 3 ] #4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+  out_channels: [ 0, 1 ,2, 3 ] # 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+  orography: !!bool False
+  orography_path: None
+  train_data_path: 'path_to_data/FourCastNet/data/preprocessed/'
+  valid_data_path: 'path_to_data/FourCastNet/data/preprocessed/'
+  inf_data_path: 'path_to_data/FourCastNet/data/inference/' # test set path for inference
+  exp_dir: 'path_to_data/FourCastNet/exp/'
+  time_means_path: 'path_to_data/FourCastNet/data/stats/time_means.npy'
+  global_means_path: 'path_to_data/FourCastNet/data/stats/global_means.npy'
+  global_stds_path: 'path_to_data/FourCastNet/data/stats/global_stds.npy'
+
+afno_backbone_orography: &backbone_orography
+  <<: *backbone
+  orography: !!bool True
+  orography_path: '/pscratch/sd/s/shas1693/data/era5/static/orography.h5'
+
+afno_backbone_finetune_ndvi:
+  <<: *backbone
+  lr: 1E-4
+  batch_size: 4
+  log_to_wandb: !!bool True
+  max_epochs: 50
+  pretrained: !!bool True
+  two_step_training: !!bool False
+  in_channels: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ] # inpout is climate variables
+  out_channels: [ 23 ] #output is NDVI
+  train_data_path: 'path_to_data/FourCastNet/data/preprocessed/'
+  valid_data_path: 'path_to_data/FourCastNet/data/preprocessed/'
+  inf_data_path: 'path_to_data/FourCastNet/data/inference/' # test set path for inference
+  exp_dir: 'path_to_data/FourCastNet/exp/'
+  time_means_path: 'path_to_data/FourCastNet/data/stats/time_means.npy'
+  global_means_path: 'path_to_data/FourCastNet/data/stats/global_means.npy'
+  global_stds_path: 'path_to_data/FourCastNet/data/stats/global_stds.npy'
+
+afno_finetune_ndvi_some_years: &afno_finetune_ndvi_some_years
+  <<: *backbone
+  lr: 1E-4
+  batch_size: 24
+  num_data_workers: 32
+  log_to_wandb: !!bool True
+  log_to_screen: !!bool True
+  max_epochs: 80
+  pretrained: !!bool True
+  two_step_training: !!bool False
+  in_channels: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 ] # inpout is climate variables
+  out_channels: [ 23 ] #output is NDVI
+  pretrained_ckpt_path: '../fourcastnet_weights/m4134/FCN_weights_v0/backbone.ckpt'
+  train_data_path: "path_to_data/data/daily/preprocessed/train"
+  valid_data_path: "path_to_data/data/daily/preprocessed/valid"
+  train_years: [ 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010 ]
+  valid_years: [ 2011, 2012 ]
+  out_of_sample_years: [ 2013 ]
+  inf_data_path: 'path_to_data//data/daily/preprocessed/out_of_sample' # test set path for inference
+  exp_dir: "exp_dir"
+  time_means_path: 'fourcastnet_weights/m4134/FCN_weights_v0/stats_v0/time_means.npy'
+  global_means_path: 'fourcastnet_weights/m4134/FCN_weights_v0/stats_v0/global_means.npy'
+  global_stds_path: 'fourcastnet_weights/m4134/FCN_weights_v0/stats_v0/global_stds.npy'
