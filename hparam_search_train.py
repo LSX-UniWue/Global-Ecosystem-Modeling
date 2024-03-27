@@ -138,7 +138,7 @@ class Trainer():
         self.startEpoch = 0
         if params.resuming:
             logging.info("Loading checkpoint %s" % params.checkpoint_path)
-            self.restore_checkpoint(params.checkpoint_path)  # todo: fix this for custom model
+            self.restore_checkpoint(params.checkpoint_path)
         if params.two_step_training:
             if not params.resuming and params.pretrained:
                 logging.info("Starting from pretrained one-step afno model at %s" % params.pretrained_ckpt_path)

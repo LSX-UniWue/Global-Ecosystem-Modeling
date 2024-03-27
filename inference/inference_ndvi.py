@@ -303,7 +303,7 @@ def setup(params):
         params['N_in_channels'] = n_in_channels
     params['N_out_channels'] = n_out_channels
     params.means = np.load(params.global_means_path)[
-        0]  # needed to standardize wind data Todo: why just the wind data?
+        0]  # needed to standardize wind data
     params.stds = np.load(params.global_stds_path)[0]
 
     checkpoint_file = params['best_checkpoint_path']
